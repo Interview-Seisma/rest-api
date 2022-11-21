@@ -18,6 +18,7 @@ public class EmployeeController {
 
     @PostMapping("/calculate")
     public ResponseEntity<?> create(@RequestBody List<Employee> employeeList) {
+        employeeOutputs.clear();
         employeeList.forEach(e -> {
             employeeOutputs.add(util.calculateEmployeeDetail(e));
         });
