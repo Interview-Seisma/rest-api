@@ -2,25 +2,87 @@ package seisma.ethan.restapi.utils;
 
 import seisma.ethan.restapi.model.Employee;
 import seisma.ethan.restapi.model.EmployeeOutput;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class EmployeeUtil {
+    private String TAX_INCOME_URL = "https://vietrek.s3.ap-southeast-1.amazonaws.com/tax_income.json";
+
+    JsonObject taxIncomeJson;
+    JsonArray taxBracket;
+
+    public EmployeeUtil (){
+        try {
+            taxIncomeJson = getTaxIncome();
+            taxBracket = taxIncomeJson.getAsJsonArray("taxIncome");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public int incomeTax(int annualSalary) {
-        if (annualSalary <= 18200) {
-            return 0;
+        int taxBracketIndex = findTaxBracketIndex(annualSalary);
+        if (taxBracketIndex == -1) {
+            return -1;
         }
 
-        if (18201 <= annualSalary && annualSalary <= 37000) {
-            return (int) (Math.round((annualSalary - 18200) * 0.19)/12);
-        }
+        JsonObject t = taxBracket.get(taxBracketIndex).getAsJsonObject();
 
-        if (37001 <= annualSalary && annualSalary <= 87000) {
-            return (int) (Math.round((3572 + (annualSalary - 37000) * 0.325)/12));
-        }
+        int low = Integer.parseInt(t.get("low").toString());
+        int tax = Integer.parseInt(t.get("tax").toString());
+        float accumulated = Float.parseFloat(t.get("accumulated").toString());
 
-        if (87001 <= annualSalary && annualSalary <= 180000) {
-            return (int) (Math.round(19822 + ((annualSalary - 87000) * 0.37)/12));
+        return (int) (Math.round((tax + (annualSalary - low) * accumulated)/12));
+    }
+
+    private int findTaxBracketIndex(int annualSalary) {
+        for (int i = 0; i < taxBracket.size(); i++) {
+            int low = Integer.parseInt(taxBracket.get(i).getAsJsonObject().get("low").toString());
+            int high = Integer.parseInt(taxBracket.get(i).getAsJsonObject().get("high").toString());
+            if(low <= annualSalary && annualSalary <= high) {
+                return i;
+            }
         }
-        return (int) (Math.round(annualSalary * 0.45)/12);
+        return -1;
+    }
+
+    private JsonObject getTaxIncome() throws IOException {
+        String data = null;
+        StringBuilder responseData = new StringBuilder();
+        JsonObject jsonObject = null;
+
+        URL url = null;
+        url = new URL(TAX_INCOME_URL);
+
+        HttpURLConnection con
+                = (HttpURLConnection)url.openConnection();
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", "Mozilla/5.0");
+        int responseCode = con.getResponseCode();
+
+        System.out.println(
+                "\nSending 'GET' request to URL : " + url);
+
+        try (BufferedReader in
+                     = new BufferedReader(new InputStreamReader(
+                con.getInputStream()))) {
+
+            String line;
+
+            while ((line = in.readLine()) != null) {
+                responseData.append(line);
+            }
+
+            jsonObject = new Gson().fromJson(
+                    responseData.toString(), JsonObject.class);
+        }
+        return jsonObject;
     }
 
     public int grossIncome(int annualSalary) {

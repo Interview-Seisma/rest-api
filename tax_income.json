@@ -1,0 +1,35 @@
+{
+  "taxIncome": [
+    {
+      "low": 0,
+      "high": 18200,
+      "tax": 0,
+      "accumulated": 0
+    },
+    {
+      "low": 18201,
+      "high": 37000,
+      "tax": 0,
+      "accumulated": 0.19
+    },
+    {
+      "low": 37001,
+      "high": 87000,
+      "tax": 3572,
+      "accumulated": 0.325
+    },
+    {
+      "low": 87001,
+      "high": 180000,
+      "tax": 19822,
+      "accumulated": 0.37
+    },
+    {
+      "low": 180001,
+      "high": 999999999,
+      "tax": 54232,
+      "accumulated": 0.45
+    }
+  ],
+  "currency": "$"
+}
